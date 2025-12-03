@@ -1,0 +1,23 @@
+# Air configuration for WMS Go project
+
+[build]
+  cmd = "go build -o ./bin/wms-server cmd/server/main.go"
+  bin = "bin/wms-server"
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  exclude_dir = ["bin", "vendor", "testdata", ".workflow"]
+  stop_on_error = true
+  delay = 1000
+
+[color]
+  main = "yellow"
+  watcher = "cyan"
+  build = "magenta"
+  runner = "green"
+  app = "white"
+  error = "red"
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

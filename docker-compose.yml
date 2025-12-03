@@ -23,6 +23,28 @@ services:
     networks:
       - wms-network
 
+  wms-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wms-server
+    restart: unless-stopped
+    environment:
+      # Server Configuration
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+      # Database Configuration - 使用服务名 postgres 而不是 localhost
+      DATABASE_DSN: host=postgres user=wms_user password=wms_password dbname=wms_db port=5432 sslmode=disable TimeZone=Asia/Shanghai
+      # Environment
+      ENVIRONMENT: production
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wms-network
+
 volumes:
   postgres_data:
     driver: local

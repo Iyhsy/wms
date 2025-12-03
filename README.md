@@ -111,15 +111,15 @@ cd wms
 2. **安装依赖**
 
 ```bash
-go mod download
+make deps
 ```
 
 3. **配置环境变量**
 
-复制 `.env.example` 文件并重命名为 `.env`:
+运行 `make setup` 自动复制 `.env.example` 为 `.env`:
 
 ```bash
-cp .env.example .env
+make setup
 ```
 
 编辑 `.env` 文件,配置数据库连接信息:
@@ -149,17 +149,103 @@ GRANT ALL PRIVILEGES ON DATABASE wms_db TO wms_user;
 5. **运行应用**
 
 ```bash
-go run cmd/server/main.go
+make dev
 ```
+
+> `make dev` Requires Air (auto-installed on first run) 并提供热重载体验。
 
 或者编译后运行:
 
 ```bash
-go build -o wms-server cmd/server/main.go
-./wms-server
+make build
+./bin/wms-server
 ```
 
+需要直接启动服务并自动拉起依赖容器时，可执行:
+
+```bash
+make run
+```
+
+### Docker 部署
+
+1. **使用 Docker Compose 一键部署（推荐）**
+
+```bash
+# 构建并启动所有服务（Postgres + WMS Server）
+docker-compose up -d --build
+
+# 查看日志
+docker-compose logs -f wms-server
+
+# 停止服务
+docker-compose down
+
+# 停止并删除数据卷（清空数据库）
+docker-compose down -v
+```
+
+2. **单独构建 Docker 镜像**
+
+```bash
+# 构建镜像
+docker build -t wms-server:latest .
+
+# 运行容器（需要先启动 Postgres）
+docker run -d \
+  --name wms-server \
+  -p 8080:8080 \
+  -e DATABASE_DSN="host=postgres user=wms_user password=wms_password dbname=wms_db port=5432 sslmode=disable TimeZone=Asia/Shanghai" \
+  wms-server:latest
+```
+
+**重要提示**：
+- Docker 环境中，数据库主机名使用 `postgres`（服务名）而不是 `localhost`
+- 生产环境配置参考 `.env.production` 文件
+- 健康检查端点：`http://localhost:8080/health`
+
 服务将启动在 `http://localhost:8080`
+
+#### 快速启动命令
+
+```bash
+make setup && make docker-up && make dev
+```
+
+## Makefile Targets
+
+Makefile 覆盖了开发、测试、容器及常用维护流程，默认执行 `make` 将运行 `all` 目标(构建 + 测试)。
+
+### Build & Development
+
+| Target | Description | Usage |
+|--------|-------------|-------|
+| `all` | 构建二进制并运行全部测试 | `make` |
+| `build` | 编译应用并输出到 `bin/wms-server` | `make build` |
+| `test` | 执行 `go test ./... -v` | `make test` |
+| `run` | 构建、确保 `.env` 存在与 Docker 服务运行后启动二进制 | `make run` |
+| `dev` | 使用 Air 热重载启动开发服务器(首次自动安装 Air) | `make dev` |
+| `clean` | 删除 `bin/` 构建产物 | `make clean` |
+
+### Docker Orchestration
+
+| Target | Description | Usage |
+|--------|-------------|-------|
+| `docker-up` | 启动 docker-compose 服务 | `make docker-up` |
+| `docker-down` | 停止并移除 docker-compose 服务 | `make docker-down` |
+| `docker-logs` | 持续跟踪 docker-compose 日志 | `make docker-logs` |
+| `docker-restart` | 重启所有 docker-compose 服务 | `make docker-restart` |
+
+### Utility & Maintenance
+
+| Target | Description | Usage |
+|--------|-------------|-------|
+| `deps` | 下载 Go 模块依赖 | `make deps` |
+| `tidy` | 同步 `go.mod` 与 `go.sum` | `make tidy` |
+| `fmt` | 对所有 Go 文件执行 `go fmt` | `make fmt` |
+| `vet` | 运行 `go vet` 静态分析 | `make vet` |
+| `setup` | 从 `.env.example` 创建 `.env` | `make setup` |
+| `help` | 列出所有可用目标与说明 | `make help` |
 
 ## API 文档
 
@@ -300,17 +386,17 @@ networks:
 启动服务:
 
 ```bash
-docker-compose up -d
+make docker-up
 ```
 
 ### 直接部署
 
 ```bash
-# 编译二进制文件
-go build -o wms-server cmd/server/main.go
+# 构建二进制文件
+make build
 
 # 运行
-./wms-server
+./bin/wms-server
 ```
 
 
@@ -461,6 +547,10 @@ log.Error("Operation failed",
 
 
 ## 版本历史
+### v1.0.1 (2025-12-03)
+- 增加makefile配置
+- 增加docker配置
+- 支持热重载
 
 ### v1.0.0 (2025-12-03)
 - 初始版本，包含基础库存管理功能
@@ -474,4 +564,3 @@ log.Error("Operation failed",
 **最后更新**: 2025-12-03
 
 **作者**: 小王同学
-
